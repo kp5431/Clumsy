@@ -30,7 +30,7 @@ Author: Kade Perrotti
 // The balance point occurs when the robot is leaned slightly towards the battery side. 
 // Further negative causes robot to lean towards battery side, futher positive leans 
 // more towards pcb side
-#define ACCEL_Z_OFFSET (-1.1 * ACCEL_STOPANGLE_HACK) 
+#define ACCEL_Z_OFFSET (-1.2 * ACCEL_STOPANGLE_HACK) 
 
 // This constant determines how much to weigh the accelerometer vs. gyroscope data when performing
 // an angle estimation. Decrease to bias more towards accelerometer, increase to bias more 
@@ -40,16 +40,16 @@ Author: Kade Perrotti
 // Read more about this here: https://scolton-www.s3.amazonaws.com/docs/filter.pdf
 // The small angle approximation "range" here is probably divided by 10 though in my implementation
 // because of the ACCEL_STOPANGLE_HACK
-#define COMP_FILT_ALPHA (.998)
+#define COMP_FILT_ALPHA (.994)
  
-#define STOP_BALANCE_ANGLE (60) //robot stops attempting to balance below abs(this)
+#define STOP_BALANCE_ANGLE (55) //robot stops attempting to above below abs(this)
 
 // PID coefficients. I'm using a large (relative) integral coeff because
 // the relationship between the current angle and the motor response 
 // is not linear, it's probably more exponential 
-#define P (15)
-#define I (0.5) 
-#define D (.2) 
+#define P (20.0)
+#define I (0.3) 
+#define D (.6) 
 
 // (stolen from Polulu Balancer.ino example)
 // DISTANCE_DIFF_RESPONSE determines the response to differences
@@ -79,6 +79,8 @@ LSM6 imu;
 Balboa32U4Motors motors;
 Balboa32U4Encoders encoders;
 
+char out[100];
+char floatStr[10];
 void setup() {
   //Serial.begin(115200);
   Serial1.begin(115200);
@@ -90,7 +92,7 @@ void setup() {
   {
     while(true)
     {
-      Serial.println("Failed to detect and initialize IMU!");
+      Serial1.println("Failed to detect and initialize IMU!");
       delay(200);
     }
   }
@@ -98,7 +100,7 @@ void setup() {
   imu.writeReg(LSM6::CTRL2_G, 0b01101000); //416Hz 1000dps Gyroscope        
   imu.writeReg(LSM6::CTRL1_XL, 0b01100100); //16g 416Hz Accelerometer
   motors.allowTurbo(true);
-  delay(10000);
+  delay(5000);
   Serial1.println("Starting...");
   ledGreen(true);
   ledRed(false);
@@ -155,9 +157,9 @@ void updateIntegral()
   //reset integral if angle has changed sign since last iteration
   if((angle > 2 && lastAngle < 0) || (angle < -2 && lastAngle > 0))
   {
-    integral = integral / 2;
+    integral = integral - 1;
   }
-  else if(abs(integral) >= 400) //limit integral windup
+  else if(abs(integral) > 400) //limit integral windup
   {
     if(integral >= 400)
     {
@@ -198,10 +200,34 @@ void calculateMotorResponse()
 
 void debugPrint()
 {
-  Serial1.print("angle:");
-  Serial1.print(angle);
-  Serial1.print(",response:");
-  Serial1.println(response);
+  dtostrf(angle, 6, 2, out);
+  strcat(out, ",");
+  
+  dtostrf(angleRate, 6, 2, out + strlen(out));
+  strcat(out, ",");
+  
+  itoa(integral, out + strlen(out), 10);
+  strcat(out, ",");
+
+  dtostrf(response, 6, 2, out + strlen(out));
+  
+
+
+  //snprintf_P(out, sizeof(out),
+  //  PSTR("%.2f,%.2f,%d,%.2f\n"),
+  //  angle, angleRate, integral, response);
+  //Serial.println(report);
+
+  //sprintf(out, "%.2f,%.2f,%d,%.2f\n", angle, angleRate, integral, response);
+  Serial1.println(out);
+  //Serial1.print("a:");
+  //Serial1.print(angle);
+  //Serial1.print(",ar:");
+  //Serial1.print(angleRate);
+  //Serial1.print("i:");
+  //Serial1.print(integral);
+  //Serial1.print(",r:");
+  //Serial1.println(response);
   //Serial.print(",t:");
   //Serial.print(10);
   //Serial.print(",b:");
@@ -234,6 +260,6 @@ void loop() {
   debugPrint();
   volatile int controlLoopEnd = micros();
   int32_t timeElapsed = controlLoopEnd - controlLoopStart; //in microseconds
-  //Serial.println(timeElapsed);
+  Serial.println(timeElapsed);
   delayMicroseconds(UPDATE_TIME_US - timeElapsed); //delay for 2000us - the time it took for this iteration to run  
 }

@@ -3,8 +3,8 @@ angle = data(:, 1);
 angleRate = data(:, 2);
 integral = data(:, 3);
 response = data(:, 4);
-figure(1);
 
+figure(1);
 subplot(1, 3, 1);
 plot(angle, response, 'bo');
 xlabel('Angle Estimate (Degrees)', FontSize=12)
@@ -21,7 +21,9 @@ grid on;
 
 subplot(1,3,3);
 plot(integral, response, 'yo');
-xlabel('Integral (Degrees Per Second)', FontSize=12)
+xlabel('Integral', FontSize=12)
 ylabel('Motor Response', FontSize=12)
-title("AngleRate vs. Motor Response");
+title("Integrated Angle vs. Motor Response");
 grid on;
+
+
