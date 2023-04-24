@@ -30,7 +30,7 @@ Author: Kade Perrotti
 // The balance point occurs when the robot is leaned slightly towards the battery side. 
 // Further negative causes robot to lean towards battery side, futher positive leans 
 // more towards pcb side
-#define ACCEL_Z_OFFSET (-1.2 * ACCEL_STOPANGLE_HACK) 
+#define ACCEL_Z_OFFSET (-1.0 * ACCEL_STOPANGLE_HACK) 
 
 // This constant determines how much to weigh the accelerometer vs. gyroscope data when performing
 // an angle estimation. Decrease to bias more towards accelerometer, increase to bias more 
@@ -48,8 +48,14 @@ Author: Kade Perrotti
 // the relationship between the current angle and the motor response 
 // is not linear, it's probably more exponential 
 #define P (20.0)
-#define I (0.3) 
-#define D (.6) 
+#define I (0.0) 
+#define D (.7) 
+
+//Values from using linear regression
+#define thetaIntercept (0.062072F)
+#define thetaAngle (17.406281F)
+#define thetaAngleRate (0.468099F)
+#define thetaIntegral (0.288597F)
 
 // (stolen from Polulu Balancer.ino example)
 // DISTANCE_DIFF_RESPONSE determines the response to differences
@@ -74,6 +80,9 @@ int32_t integral = 0;
 //used to help motors turn at same rate (stolen from Polulu)
 int32_t distanceLeft = 0;
 int32_t distanceRight = 0;
+
+//FOR TEST PURPOSES
+int32_t accelZSum = 0;
 
 LSM6 imu;
 Balboa32U4Motors motors;
@@ -100,7 +109,7 @@ void setup() {
   imu.writeReg(LSM6::CTRL2_G, 0b01101000); //416Hz 1000dps Gyroscope        
   imu.writeReg(LSM6::CTRL1_XL, 0b01100100); //16g 416Hz Accelerometer
   motors.allowTurbo(true);
-  delay(5000);
+  delay(2000);
   Serial1.println("Starting...");
   ledGreen(true);
   ledRed(false);
@@ -183,6 +192,8 @@ Calculate and set motor response using PID
 void calculateMotorResponse()
 {
   response = (P * angle) + (D * angleRate) + (I * integral);
+  //response = thetaIntercept + ((thetaAngle * angle) + (thetaAngleRate * angleRate) + (thetaIntegral * integral));
+  //response = 1.510446 + ((16.343699 * imu.a.z) + (-15.626175 * imu.g.y));
   
   // Adjust for differences in the left and right distances; this
   // will prevent the robot from rotating as it rocks back and
@@ -200,6 +211,22 @@ void calculateMotorResponse()
 
 void debugPrint()
 {
+
+  /*
+  Get accelerometer z, gyroscope y, and response out via bluetooth.
+  */
+
+  /*itoa(imu.a.z, out, 10);
+  strcat(out, ",");
+  itoa(imu.a.x, out + strlen(out), 10);
+  strcat(out, ",");
+  itoa(imu.g.y, out + strlen(out), 10);
+  strcat(out, ",");
+  dtostrf(response, 6, 2, out + strlen(out));
+  */
+  
+  
+  //Get angle, angleRate, integral, response out via bluetooth
   dtostrf(angle, 6, 2, out);
   strcat(out, ",");
   
@@ -212,11 +239,6 @@ void debugPrint()
   dtostrf(response, 6, 2, out + strlen(out));
   
 
-
-  //snprintf_P(out, sizeof(out),
-  //  PSTR("%.2f,%.2f,%d,%.2f\n"),
-  //  angle, angleRate, integral, response);
-  //Serial.println(report);
 
   //sprintf(out, "%.2f,%.2f,%d,%.2f\n", angle, angleRate, integral, response);
   Serial1.println(out);
@@ -260,6 +282,6 @@ void loop() {
   debugPrint();
   volatile int controlLoopEnd = micros();
   int32_t timeElapsed = controlLoopEnd - controlLoopStart; //in microseconds
-  Serial.println(timeElapsed);
+  //Serial.println(timeElapsed);
   delayMicroseconds(UPDATE_TIME_US - timeElapsed); //delay for 2000us - the time it took for this iteration to run  
 }

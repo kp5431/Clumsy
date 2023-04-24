@@ -4,6 +4,11 @@ data = importdata('on_rug_new_tune.log');
 x = data(:, 1:3); %angle, angleRate, integral
 y = data(:, 4);
 
+%randomise indices of data
+idx = randperm(length(x));
+x = x(idx, :); %reorder rows
+y = y(idx);
+
 %Add intercept term to x
 xData = [ones(length(x), 1) x];
 

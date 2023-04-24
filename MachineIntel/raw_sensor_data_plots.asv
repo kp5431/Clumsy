@@ -1,0 +1,28 @@
+data = importdata('Raw_data_no_integral.log');
+xRaw = data(:, 1:2);
+accelZ = x(:, 1);
+gyroY = x(:, 2);
+response = data(:, 3);
+
+
+%figure(1);
+%subplot(1, 3, 1);
+%plot(accelZ, response, 'bo');
+%xlabel('accel z', FontSize=12)
+%ylabel('Motor Response', FontSize=12)
+%title("accel z vs. Motor Response");
+%grid on;
+
+%subplot(1, 2, 2);
+%plot(gyroY, response, 'ro');
+%xlabel('accel x', FontSize=12)
+%ylabel('Motor Response', FontSize=12)
+%title("accel x vs. Motor Response");
+%grid on;
+
+figure(1)
+scatter3(accelZ, gyroY, response);
+xlabel('Accelerometer Z Axis');
+ylabel('Gyroscope Y Axis');
+zlabel('Motor Response')
+
