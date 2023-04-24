@@ -1,8 +1,8 @@
 clear; close all;
 
-data = importdata('on_rug_new_tune.log');
-x = data(:, 1:3); %angle, angleRate, integral
-y = data(:, 4);
+data = importdata('approxAngle.log');
+x = data(:, 1:2); %angle, angleRate, integral
+y = data(:, 3);
 
 %randomise indices of data
 idx = randperm(length(x));
@@ -12,10 +12,10 @@ y = y(idx);
 %Add intercept term to x
 xData = [ones(length(x), 1) x];
 
-alpha = 0.0001; %learning rate
+alpha = 0.00001; %learning rate
 iters = 10000; %grad descent iterations;
 
-theta = zeros(4, 1);
+theta = zeros(3, 1);
 [theta, J_history] = gradientDescentMulti(xData, y, theta, alpha, iters);
 
 fprintf('Gradient Descent theta = [intercept: %f, a: %f, aR: %f, int: %f]\n',theta);

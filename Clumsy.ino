@@ -83,6 +83,7 @@ int32_t distanceRight = 0;
 
 //FOR TEST PURPOSES
 int32_t accelZSum = 0;
+float angleApprox = 0;
 
 LSM6 imu;
 Balboa32U4Motors motors;
@@ -150,6 +151,9 @@ void updatePosition()
   //sum this with the previous angle to get the current angle estimation
   //weighted sum the above with a weighted estimate of angle from the accelerometer, accelZ 
   angle = (COMP_FILT_ALPHA * ((angleRate * DT) + angle) + ((1 - COMP_FILT_ALPHA) * accelZ));
+
+  //For test purposes
+  angleApprox = (COMP_FILT_ALPHA * ((imu.g.y * DT) + angleApprox) + ((1 - COMP_FILT_ALPHA) * imu.a.z));
 }
 
 /**
@@ -191,9 +195,11 @@ Calculate and set motor response using PID
 **/
 void calculateMotorResponse()
 {
-  response = (P * angle) + (D * angleRate) + (I * integral);
+  //response = (P * angle) + (D * angleRate) + (I * integral);
   //response = thetaIntercept + ((thetaAngle * angle) + (thetaAngleRate * angleRate) + (thetaIntegral * integral));
-  //response = 1.510446 + ((16.343699 * imu.a.z) + (-15.626175 * imu.g.y));
+
+  //response using angleApprox
+  response = -125.5170 + (0.7454 * angleApprox) + (.0072 * imu.g.y);
   
   // Adjust for differences in the left and right distances; this
   // will prevent the robot from rotating as it rocks back and
@@ -213,6 +219,17 @@ void debugPrint()
 {
 
   /*
+  Send short approximation of angle and  gyro y and send via bluetooth
+  dtostrf(angleApprox, 6, 2, out);
+  strcat(out, ",");
+  
+  itoa(imu.g.y, out + strlen(out), 10);
+  strcat(out, ",");
+  
+  dtostrf(response, 6, 2, out + strlen(out));
+  */
+
+  /*
   Get accelerometer z, gyroscope y, and response out via bluetooth.
   */
 
@@ -227,7 +244,7 @@ void debugPrint()
   
   
   //Get angle, angleRate, integral, response out via bluetooth
-  dtostrf(angle, 6, 2, out);
+  /*dtostrf(angle, 6, 2, out);
   strcat(out, ",");
   
   dtostrf(angleRate, 6, 2, out + strlen(out));
@@ -237,11 +254,12 @@ void debugPrint()
   strcat(out, ",");
 
   dtostrf(response, 6, 2, out + strlen(out));
+  */
   
-
+  Serial1.println("Approx angle");
 
   //sprintf(out, "%.2f,%.2f,%d,%.2f\n", angle, angleRate, integral, response);
-  Serial1.println(out);
+  //Serial1.println(out);
   //Serial1.print("a:");
   //Serial1.print(angle);
   //Serial1.print(",ar:");

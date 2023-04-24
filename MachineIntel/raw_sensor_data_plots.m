@@ -11,6 +11,14 @@ angle = xTrans(:, 1);
 angleRate = xTrans(:, 2);
 response = dataTrans(:, 4);
 
+dataApprox = importdata('approxAngle.log');
+xApprox = dataApprox(:, 1:2);
+
+
+angleApprox = xApprox(:, 1);
+gyroYApprox = xApprox(:, 2);
+responseApprox = dataApprox(:, 3);
+
 
 
 
@@ -43,4 +51,13 @@ xlabel('Angle Estimation');
 ylabel('Angular Rate of Change');
 zlabel('Motor Response')
 title("Angle and Angle Rate vs. Motor Response")
+
+figure(3)
+scatter3(angleApprox, gyroYApprox, responseApprox);
+xlabel('Angle Approx Estimation');
+ylabel('gyroY');
+zlabel('Motor Response')
+title("Angle Approx and Gyro Y vs. Motor Response")
+
+
 
