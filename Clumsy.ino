@@ -48,14 +48,24 @@ Author: Kade Perrotti
 // the relationship between the current angle and the motor response 
 // is not linear, it's probably more exponential 
 #define P (20.0)
-#define I (0.0) 
-#define D (.7) 
+#define I (0.3) 
+#define D (.6) 
 
-//Values from using linear regression
-#define thetaIntercept (0.062072F)
-#define thetaAngle (17.406281F)
-#define thetaAngleRate (0.468099F)
-#define thetaIntegral (0.288597F)
+//Tune using just PD (for sampling approximation)
+#define P_PD (20.0)
+#define D_PD (0.7)
+
+// Values gained from linear regression approximation of base PID function
+//#define thetaIntercept (0.062072F)
+//#define thetaAngle (17.406281F)
+//#define thetaAngleRate (0.468099F)
+//#define thetaIntegral (0.288597F)
+
+//Values gained from reduced transformation approximation of PD function
+#define thetaIntercept (-125.5170)
+#define thetaAngleApprox (0.7454)
+#define thetaGyroY (.0072)
+
 
 // (stolen from Polulu Balancer.ino example)
 // DISTANCE_DIFF_RESPONSE determines the response to differences
@@ -88,6 +98,8 @@ float angleApprox = 0;
 LSM6 imu;
 Balboa32U4Motors motors;
 Balboa32U4Encoders encoders;
+Balboa32U4ButtonA buttonA;
+
 
 char out[100];
 char floatStr[10];
@@ -114,6 +126,7 @@ void setup() {
   Serial1.println("Starting...");
   ledGreen(true);
   ledRed(false);
+  buttonA.waitForButton();
 }
 
 /**
@@ -195,11 +208,17 @@ Calculate and set motor response using PID
 **/
 void calculateMotorResponse()
 {
+  //Most well performing hand tuned response
   //response = (P * angle) + (D * angleRate) + (I * integral);
+
+  //Linear Regression approximation using data from best performing hand tune
   //response = thetaIntercept + ((thetaAngle * angle) + (thetaAngleRate * angleRate) + (thetaIntegral * integral));
 
-  //response using angleApprox
-  response = -125.5170 + (0.7454 * angleApprox) + (.0072 * imu.g.y);
+  //PD tune
+  //response = (P_PD * angle) + (D_PD * angleRate);
+
+  //response using angleApprox, from data from PD tune
+  response = thetaIntercept + (thetaAngleApprox * angleApprox) + (thetaGyroY * imu.g.y);
   
   // Adjust for differences in the left and right distances; this
   // will prevent the robot from rotating as it rocks back and
@@ -256,12 +275,12 @@ void debugPrint()
   dtostrf(response, 6, 2, out + strlen(out));
   */
   
-  Serial1.println("Approx angle");
+  //Serial1.println("Approx angle");
 
   //sprintf(out, "%.2f,%.2f,%d,%.2f\n", angle, angleRate, integral, response);
   //Serial1.println(out);
   //Serial1.print("a:");
-  //Serial1.print(angle);
+  Serial1.println(angle);
   //Serial1.print(",ar:");
   //Serial1.print(angleRate);
   //Serial1.print("i:");
@@ -300,6 +319,6 @@ void loop() {
   debugPrint();
   volatile int controlLoopEnd = micros();
   int32_t timeElapsed = controlLoopEnd - controlLoopStart; //in microseconds
-  //Serial.println(timeElapsed);
+  //Serial1.println(timeElapsed);
   delayMicroseconds(UPDATE_TIME_US - timeElapsed); //delay for 2000us - the time it took for this iteration to run  
 }

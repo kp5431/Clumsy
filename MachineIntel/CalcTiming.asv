@@ -1,0 +1,5 @@
+dataApprox = importdata('approxAngleTime.log');
+dataPD = importdata('PDTime.log');
+fprintf('mean time for approx: %.4f\n', mean(dataApprox));
+fprintf('mean time for PD: %.4f\n', mean(dataPD));
+fprintf()
